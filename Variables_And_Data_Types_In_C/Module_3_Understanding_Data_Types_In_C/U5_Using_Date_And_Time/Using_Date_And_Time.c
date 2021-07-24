@@ -1,259 +1,225 @@
 #include <stdlib.h>
 #include <stdio.h>   //  For printf
+#include <time.h>   // For date/time handling.
+#include <locale.h> // For locale.
 
 /*
-   We'll now look at how to cast values to other types
-   and how qualifiers can be used in C.
+   In this tutorial, we'll look at how C handles date, time,
+   and localization.
 */
 
 int main(void)
 {
     /*
-        We'll start by covering type casting.
+        Once the time.h header is imported, a range of functions,
+        constants, types and macros will become available.
 
-        Type casting is the process of converting one data
-        type into another.
+        To start with, we'll look at some of the types
+        provided by the time.h library.
 
-        Type casting in programming typically happens via
-        two approaches:
-
-            -   Implicit.
-            -   Explicit.
+        First of, let's look at the "tm" struct type. 
         
-        Implicit is "implied" casting. It's where the language
-        will automatically convert one type to another, because
-        your code implies that's what you want to do (i.e. taking
-        a variable of type int and assinging it to a variable of type
-        float or double).
+        This contains the properties that make up a datetime including 
+        seconds, minutes, days, months years etc. etc.
 
-        In cases such of these, a lot of programming languages 
-        handle this behind the scenes without warning you or throwing
-        an error. That's because you're taking a type of 16 bits
-        (in C) and trying to reassign that values to variable that
-        can handle 32 or 64 bits. 
+        We can use tm to build a datetime value by populating the properties
+        we need. 
 
-        There's no issue there. No precision is lost because the 
-        integer can be rejigged into the larger memory size without
-        having to trim it down or lose any bits.
+        We also have the time_t type which can be used to store
+        time values i a usable format. Typically this will work
+        alongside the time() function. time_t will store the time
+        as a calendar time (i.e. year/month/day/hour).
 
-        This is typically refered to as "type promotion".
+        Alternatively, clock_t is another time type which can be
+        used to store a time value.
+        
+        This however DOES NOT USE CALENADAR TIME. It represents a clock time.
+        A clock time is based on the cycles of a systems processor and is 
+        reprsented by  a long value.
 
-        Alternatively, you may attempt an operation such as 
-        dividing two integers which produce a floating point
-        result. 
+        Time.h also provides the timespec struct which stors an interval
+        of time broken down into seconds and nanoseconds.
 
-        i.e. 10/3 (two ints, floats would be 10.0 and 3.0)
+        Next up, let's take a look at some of the functions defined
+        by time.h
 
-        The compiler looks at the two values and, becuase
-        in memory the two integers have no manitssa or exponent,
-        does the next best thing and simply truncates the value.
+        We have:
 
-        This is implied behaviour. It's what the C compiler knows
-        what to do in instances such as these when they arise.
+        time_t time (time_t *destTime) 
+            Returns (time_t) - the time in seconds in unix time (or the 
+            number of seconds since midnight on 1st Jan 1970)).
 
-        When integers are divided together, the C compiler will 
-        always truncate the remainder (the fractional part) because
-        it doesn't have the memory structure to handle it! 
+            Parameters - 
+                *destTime: A pointer to a time_t object where the seconds
+                value will be stored (the function does return this anyway so 
+                you can use NULL here ).
 
-        Explicit casting however is instructing the compiler to 
-        perform a type converson (if it can).
+            Use when you want the current time in a UNIX format.
 
-        For example, take the following:
+
+        double difftime (time_t timeEnd, time_t timeStart);
+            Returns (double) - The difference in times (in seconds) between
+            the two parameters provided.
+
+            Parameters - 
+                timeEnd (time_t) - A time_t value representing the end time to 
+                compare the difference between.
+                
+                timeStart (time_t) - A time_t value representing the start time to 
+                compare the difference between.
+
+            Use when you want calculate the difference in seconds between two
+            times.
+
+        struct tm * localtime (const time_t *sourceTime)
+
+            Returns (struct tm) - A structure that represents the time provided
+            in the parameter broken down into it's individual time parts. 
+
+            Parameters -
+                timer (const time_t *) - A pointer to a value of type time_t that
+                has a time value to convert.
+
+            Use when you want to break down the time passed in as the parameter into
+            it's consituent parts (i.e. seconds, minutes, hours, days, weeks etc. etc.)
+
+
+        size_t strftime (char *strDest, size_t maxsize, const char *format, const struct
+        tm *timeptr)
+
+        Returns (int) - The function returns the number of characters copied to the 
+        array pointed to by the ptr parameter. If the length of the output string is
+        greater than the specified maximum size passed in via the parameter, then 
+        0 is returned and the contents of the array pointed to by ptr are 
+        indeterminate (i.e. the fuction couldn't run properly, so the value of the 
+        array will be whatever leftover values were stored in that memory location
+        when used by the system).
+
+        Parameters -
+            strDest - A pointer to the dsetination array where the created C string
+            containin the new formatted time string will be cpied to.
+
+            maxSize - The maximum number of characters to be copied to ptr INCLUDING
+            the null-character
+
+            format - The C string containing any combination of regular characters
+            and special format specifiers. The format specifiers are placed by the
+            function to the corrrspsonding values to represent the time specified in
+            timeptr.
+
+            timeptr - Pointer to a tm struct that contains a calenda time broken
+            down into it's components. 
+
+        Use when you want to build a string from a given time and date string format
+        using the format specifiers used by C's time library:
+        https://www.cplusplus.com/reference/ctime/strftime
+
+        In essence, you pass in a reference to the array you want to write to, pass in 
+        the max size you want the output string to be (icluding the null terminator),
+        a defined format you want your output string to be, and how your time values
+        will be formatted, and a reference to the time struct that will be used to 
+        populate the time format and build the final string.
+
+        The function copies the constructed string to the array passed in as the parameter
+        and returns the number of characters that were copied across
+
+        int timespec_get(struct timespec* time_spec, int base); (Available in the C11 spec)
+
+        Returns - The value of "base" if successful. Zero otherwise.
+
+        Parameters -
+        time_spec(struct timespec*) - A pointer to a struct that is set to the time in seconds 
+        and nanoseconds since the start of the epoch (Jan 1 1970 @ midnight).
+
+        base (int) - TIME_UTC or another nonzero integer value indicating the time base.
+        (i.e. UTC+1, UTC-1, UTC+2, UTC-2)
+
+        This function gets the current calendar time in given time base and stored it in the
+        given time spec parameter. 
+
+        Now let's take a look at an example of getting the current time and formatting it
+        using what we now know.
     */
 
-    float a = 35;
-    float b = 17;
+   //   Return the current time in seconds since 1970 @ 00:00.
+   //   Null pointer as we don't want to assign the value to
+   //   ant other variables other than the one we return the value to.
+    time_t timeInSeconds = time(NULL);
 
-    float resultOne = 35 / 17; // Implicit Conversion. Remainder dropped!
-    float resultTwo = (float) 35 / 17; // Explicit (cast operator used) - Keep the remainder!
-
-    printf("Result: %f\n", resultOne);
-    printf("Result: %f\n", resultTwo);
+    /* 
+        We now need to let C convert the time in seconds sinxe 1970
+        to a much more useful calendar time of it's consitutent parts.
+        We can do this by using localtime() to convert our time_t
+        value into a struct of all the calendar values extracted
+        from the seconds.
+    */
+    struct tm *ptm = localtime(&timeInSeconds);
 
     /*
-        Our first conversion which relies on division of two
-        integers returns a non fractional value despite our
-        recieving variable being of type float. It should be 
-        able to handle the decimal! But why doesn't it?
+        Here we format our output from the ptm tm struct!
 
-        Well the operation returns the result of a division 
-        between two integers (which is a value of type integer).
-        Because both types are integer, C is built to simply truncate
-        the decimal and treat the result as an integer.
+        We essentially extract all of the time components using
+        the struct's built in member properties. 
 
-        Then, because the C compiler implictly knows how to convert
-        an int to it's equivalent float value, C converts the
-        truncated int value to it's equivalent floating point
-        equivalent in memory... which remiains truncated.
+        But why do we need to add 1900 on to the year?
 
-        However, in the second example, we mangage to bypass this.
+        Well the tm struct treats the retrieved system time relative
+        to 1900. So in actuallity, 2021 - 1900 (121) is actually 
+        being stored in the year property. 
 
-        The reason for this is in C, the division operator knows
-        what to do when faced with a division between a float and an 
-        int (that is, convert the int to a float and do the division
-        between two floats!).
-
-        In the second example, we explcitly tell C, "Treat 32 as if it
-        were a floating point value". The C compiler then dutifully 
-        converts 32 to it's floating point equivalent in memory. 
-
-        When the fp 32 and integer 17 are passed to the division
-        operator, the C compiler then goes "Okay, i know how to handle
-        this" and performs the conversion on 17 to turn it into a 
-        floating point value.
-
-        No truncation occurs as both operands are now floats
-        and the memory for both the result and the variable we
-        assign the result to are large enough to handle the
-        structure of a floating point value!
-
-        Alternatively, we could have done:
-
-        35.0f/17 (with f explcitly telling C to treat
-        35 as a floating point value.)
-
-        Let's have a look at how C handles the integral
-        promotions.
-
-        Integral promotions:
-            -   Are performed by type rank (i.e. Char lowest,
-            long long double highest).
-            
-            -   Happens when applying operation to a given
-            integer type.
-
-            -   Type is promoted if its rank is less than the
-            int type rank.
-
-            -   If values of the original type can be represented
-            by an int, then the original type is converted to
-            int, otherwise it is converted to unsigned int 
-            (for example, operations between char values will
-            promote their operands to ints)
-
-            Let's have a look at the example below:
+        To account for this, we need to add 1900 to give us 2021!
+        (As of the year this tutorial was written).
     */
+    printf("The Time Is: %02d/%02d/%04d  %02d:%02d:%02d\n",
+    ptm -> tm_mday, ptm -> tm_mon, ptm -> tm_year + 1900,
+    ptm -> tm_hour, ptm -> tm_min, ptm -> tm_sec);
 
-    //  Signed char - values -128 to 127
-    signed char cResult;
-    signed char cResultOverflow;
-    signed char c1 = 100;
-    signed char c2 = 3;
-    signed char c3 = 4;
+    //  Remember we can also use strftime
+    char buffer[80];
+    strftime(buffer, sizeof(buffer), "The Current Datetime is: %c", ptm);
+    printf("\n%s\n", buffer);
 
     /*  
-        In this operation, multiplying 100 by 3 gives us
-        300. This is outside the range of the signed char
-        values! 
+        Now let's explore how to make our apps able to use different
+        locale's so we can handle things such as number format and 
+        currency using other country's symbols and formats.
 
-        However, C will implicitly convert any operations
-        between char values to int, then convert them back
-        to the signed char (original type) when the operation
-        is finished. 
+        To do this we can use the locale.h library.
 
-        This means that in our example below, we get:
-        300 / 4 (because some special behind the scenes
-        conversion is going on, BODMAS is not followed)
-        which equals 75. 
+        Here we have a range of useful components such as:
 
-        Once the operation is complete, C converts this 
-        back to a signed char. 75 sits in the range of 
-        -128 to 127 so all is good. 'K' is returned!
+        Types:
+            -   struct lconv - Bundles together properties such as a cultre's 
+                currency symbol, how a currency is formatted, and where the
+                decimal point is in a numeric value.
 
-        However, if we changed C3 to 1, we'd end up with
-        300 / 1 which is 300. 300 would be implicitly 
-        converted back to char, despite being outside of the 
-        char range of values, so overflow would occur.
+        Functions 
+            - char * setlocale(int category, cont char *locale) - Sets a number of 
+            variables used by the locale.h file to values that match the locale
+            represented by the provided string (locale). Category is a macro 
+            of an integer value that defines either a specific locale detail
+            to change (if a specific category is provided) or to set all of
+            the variables in the locale header to the respective culture provided
+            by "locale" if the LC_ALL Macro is provided.
 
-        300 - 255 is 45 which in ASCII is 44 (ASCII
-        stats from 0 so minus 1).
+            - struct lconv * localeconv(void) - Returns a pointer to a struct lconv
+            for the current locale (i.e. whatever was set in the setlocale call).
 
-        The results from both operations are demonstrated 
-        below.
+            Now let's run a quick demo to see locale in action:
     */
 
+    puts("\nLocale Demo");
 
-    cResult = c1 * c2 / c3;
-    cResultOverflow = c1 * c2 / 1;
-    puts("\nIntegral Promotion Demo");
-    printf("cResult = %c\n", cResult);
-    printf("cResult = %c\n", cResultOverflow);
+    //  Set all locale values to whatever the system's locale is currently set
+    //  to (An empty locale parameter is provided, the default environment variables
+    //  currently used by the OS will be used - These will be GB on my system!)
+    setlocale(LC_ALL, "");
 
-    /*
-        Let's now have a look at the usual arithmetic conversions
-        for integral types. 
+    //  Get a pointer to a locale struct populated with the values used 
+    //  by the locale set by setLocale.
+    const struct lconv* const currentlocale = localeconv();
 
-        In C these occur when an operation occurs between operands
-        of different types. 
-
-        When this happens, C will perform an automatic conversion to
-        find a common type for all operands and the result of the 
-        operation. This occurs for most operators that can be applied
-        to integral types. 
-
-        This is done to ensure operations are performed safely and produce
-        a precise and logical output.
-
-        Let's take a look at the example below.
-
-        Here we have an int value and a char. What happens when we add the int
-        to the char?
-
-        As we know, a char is given by it's numeric code in the ASCII table, so
-        C converts 'a' to it's integer ASCII value (97) and adds the two values
-        together. As both int and char can be int's C will convert the output 
-        value to int as well, which will then be assigned to x. It does this
-        because, as mentioned before, C wants to find the common type for both 
-        the operations and the returned value. 
-
-        More details on the "airthmetic conversions" C performs behind the scenes
-        by the C compiler can be found here:
-        https://docs.microsoft.com/en-us/cpp/c-language/usual-arithmetic-conversions?view=msvc-160
-
-    */
-    puts("\nUsual Arithmetic Conversions");
-    int intVal = 10;
-    char charVal = 'a'; // ASCII is 97
-
-    intVal = intVal + charVal;
-    printf("Value of intVal (int) + charVal (char) Is: %d\n", intVal);
-
-    /*
-        Finally, let's take a look at some of the Type Qualifiers in C.
-
-        In C, type qualifiers represent keywords which are used to
-        modify the properties of a variable.
-
-        For example:
-
-        const - A keyword that makes a variable readonly. Once
-        a const variable is  declared, that value 
-        CANNOT CHANGE! Attempting to do so results in a compile
-        time error!
-
-        Subsequently, you should avoid initalising a const without
-        any value... if you do that, the variable is initalised to
-        null, but because it's const, you can't reassign it with
-        anything!
-
-        consts are useful for values that you know for absolute
-        certainty should never change! For example, gravity 
-        (9.81m/s) should never be altered by a program once
-        defined. 
-
-        Using const helps prevent your program from programmers
-        coming along and attempting to rewrite varaibles that
-        need to remain unchanged. 
-
-        volatile - volatile variables are variables that can
-        be modified by something outside of the context of 
-        your program, but not modified explicitly by your
-        program
-    */
-
-    //  The following is invalid. You can't change a const once it's assigned!
-    //  const  int constVar = 42;
-    //  constVar = 24; 
-
+    printf("In the current locale, the default currency symbol is: %s\n", 
+    currentlocale -> int_curr_symbol);
     return 0;
 }
