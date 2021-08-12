@@ -148,7 +148,6 @@ int main(void)
                 printf("***********************\n\n");
                 break;
 
-            
             default:
                 printf("Invalid Value\n");
        }
