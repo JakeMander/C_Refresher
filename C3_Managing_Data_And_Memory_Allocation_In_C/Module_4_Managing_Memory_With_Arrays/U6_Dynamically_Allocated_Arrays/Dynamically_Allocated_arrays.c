@@ -319,9 +319,7 @@ int main (void)
             - Use variable length arrays.
 
         To create a dynamically allocated multi-dimensional array, we can perform the following:
-
-        CONFUSING DECLARATOR STUFF AT:
-        https://docs.microsoft.com/en-us/cpp/c-language/interpreting-more-complex-declarators?view=msvc-160
+        
     */
     int numberOfRows = 5;
     int numberOfColumns = 5;
@@ -394,6 +392,24 @@ int main (void)
         which is int! So we can say:
 
         "variable arr is a pointer to a VLA of integers!" 
+
+        It's worth noting you may also see 
+        
+        int (*arr) [columns] = malloc(sizeof(int[rows][columns]))
+
+        This should be the same as the above initalization. The number of 
+        columns tells C all it needs to know on how to conduct pointer
+        arithmetic. If it knows this, it can determine how to increment
+        on a row by row basis with an index of arr[i][j].
+
+        Say [columns] ends up being 4 (i.e. 4 columns per memory block in
+        our contiguous set of memory). Then C knows it needs to increment
+        by 4bytes x 4 to move between rows!
+
+        More details on complex declerators can be found here:
+        - https://docs.microsoft.com/en-us/cpp/c-language/interpreting-more-complex-declarators?view=msvc-160
+        - C99 standard (Section 6.7.5) http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
+
 
         By using this syntax, we essentially create in memory a block of
         memory that conforms to the Row major memory layout.
