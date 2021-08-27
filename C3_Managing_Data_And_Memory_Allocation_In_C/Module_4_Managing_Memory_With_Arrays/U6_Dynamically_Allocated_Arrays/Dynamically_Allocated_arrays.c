@@ -156,8 +156,13 @@ int main (void)
 
         Here we can see an example of a function that creates a variable length
         array:
+
+        It's been commented out here because VSCode and the C extension uses the
+        MSVC compiler which doesn't use the C99 standard. If you're using a C99 
+        compiler, uncomment it out and give it a try!
     */
-    int *variableLengthArray = CreateVLAExample(5);
+    
+    // int *variableLengthArray = CreateVLAExample(5);
 
     /*
         With VLA's covered, we can now look at how we can go about dynamically
@@ -306,9 +311,99 @@ int main (void)
 
         (See more at this really useful article by Randy Meyers: https://www.drdobbs.com/the-new-cwhy-variable-length-arrays/184401444)
 
+        Instead, there are two alternative approaches we can use. These are:
+
+            - Malloc a block of memory containing pointers to other malloced
+              memory blocks. We end up with an array of arrays.
+            
+            - Use variable length arrays.
+
+        To create a dynamically allocated multi-dimensional array, we can perform the following:
+
         CONFUSING DECLARATOR STUFF AT:
         https://docs.microsoft.com/en-us/cpp/c-language/interpreting-more-complex-declarators?view=msvc-160
     */
+    int numberOfRows = 5;
+    int numberOfColumns = 5;
+    int **arrayRowsPointer = (int**) malloc(numberOfRows * sizeof(int*));
+
+    for (int i = 0; i < numberOfRows; i++)
+    {
+        arrayRowsPointer[i] = malloc(numberOfColumns * sizeof(int));
+    }
+
+    for (int i = 0; i < numberOfRows; i++)
+    {
+        for (int j = 0; j < numberOfColumns; j++)
+        {
+            /*  
+                Equivalent to the following pointer dereference: *(*(arrayRowsPointer + i) + j).
+                I.e.  Derference the starting address of each element in the row tp get the
+                starting address containing our column elements. Then increment the memory
+                address that points to the start of each column by whatever column we want
+                to read.
+            */
+            arrayRowsPointer[i][j] = i * j;
+            printf("Value at Dynamic 2D Array, Index (%d, %d): %d\n", i, j, arrayRowsPointer[i][j]);
+        }
+    }
+
+    //  Now don't forget! We now need to deallocate each malloced set of column
+    //  values to stop memory leaks!
+    for (int i = 0; i < numberOfRows; i++)
+    {
+        free(arrayRowsPointer[i]);
+    }
+
+    //  Finally, free the memory containing our pointers to the columns!
+    free(arrayRowsPointer);
+
+    /*
+        The above code works, but is slightly long winded! It also requires you
+        to go back through all of your pointers and deallocate them!
+
+        If you're using the C99, a much simpler approach is to use variable 
+        length arrays.
+
+        The decleration below can get a bit confusing, so let's break it down:
+
+        int (*arr)[rows][columns] = malloc(sizeof(int[rows][columns]))
+
+        First off the right side.
+
+        Here, via malloc, we create a pointer to a block of memory of the size
+        of a variable length array. This size will be determined at run time,
+        but is essentially the size of 4 * number of rows * number of columns.
+
+        The pointer returned from malloc points to the starting address of the
+        memory block which has the size of our defined VLA.#
+
+        Now the left side of the expression.
+
+        Here we have a complex declerator (i.e. lots of things going on in our
+        decleration). The brackets simply tell C to look at this part of the
+        declerator first. 
+        
+        Here we have our variable identifier "arr". We prefix this with a 
+        * to tell the compiler that arr is a pointer.
+
+        But a pointer to what? Well we take whatever is on the right of
+        the brackets which is a VLA! So arr is a pointer to a VLA.
+
+        But now we're left with int. That evaluates to the type decleration
+        which is int! So we can say:
+
+        "variable arr is a pointer to a VLA of integers!" 
+
+        By using this syntax, we essentially create in memory a block of
+        memory that conforms to the Row major memory layout.
+
+        The advantage to this approach is, because we have the row major
+        layout but can access our memory block using arr[i][j] syntax,
+        we have a simple format that can be deallocated as a single
+        block of memory. If we use an arry of pointers, our memory
+    */
+
 
     return 0;
 }
@@ -332,8 +427,12 @@ int main (void)
     As such, use VLA's with caution. Guards should be put in place before 
     initalizing a VLA to make sure it's initalised within a sensible range of 
     size values!
+
+    If you're using a compiler that supports C99, uncomment the function and try
+    it out!
 */
-int* CreateVLAExample(size_t size)
+
+/* int* CreateVLAExample(size_t size)
 {
     double myArray[size];
 
@@ -343,4 +442,4 @@ int* CreateVLAExample(size_t size)
     }
 
     return myArray;
-}
+} */
