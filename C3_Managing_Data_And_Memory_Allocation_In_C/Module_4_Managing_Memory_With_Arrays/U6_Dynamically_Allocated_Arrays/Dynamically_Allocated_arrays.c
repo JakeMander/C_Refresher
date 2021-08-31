@@ -419,8 +419,6 @@ int main (void)
         we have a simple format that can be deallocated as a single
         block of memory. If we use an arry of pointers, our memory
     */
-
-
     return 0;
 }
 
