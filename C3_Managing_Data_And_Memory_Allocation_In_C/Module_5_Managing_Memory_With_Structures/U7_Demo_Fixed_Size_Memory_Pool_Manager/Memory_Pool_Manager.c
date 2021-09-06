@@ -98,7 +98,8 @@ MemoryPoolStatus MemPoolInit(MemoryPoolManager **pool, size_t memBlockSize,
         */
         if (i == memBlockCount - 1)
         {
-            next = nextBlock;
+            next = NULL;
+            nextBlock = NULL;
         }
 
         else
@@ -257,7 +258,6 @@ void PrintMemBlocks(MemoryPoolManager *pool)
 */
 void PrintBlock(MemoryPoolBlock *block)
 {
-    MemoryPoolBlock *nextBlock = block -> next -> data;
     printf("[%td | %d] => ", block -> next && block -> next -> data ? 
     &(block -> next -> data) - &(block -> data) : block -> size, block -> isAlloc); 
 }

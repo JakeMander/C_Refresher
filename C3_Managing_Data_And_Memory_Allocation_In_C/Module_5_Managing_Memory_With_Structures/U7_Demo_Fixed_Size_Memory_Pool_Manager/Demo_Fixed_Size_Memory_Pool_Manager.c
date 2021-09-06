@@ -1,6 +1,6 @@
-#include "Memory_Pool_Manager.c"
 #include <stdlib.h>
 #include <stdio.h>
+#include "Memory_Pool_Manager.h"
 /*
     WiredBrain coffee needs our help one last time!
 
@@ -46,6 +46,13 @@ int main (int argc, char* argv[])
     MemoryPoolBlock *block2;
 
     MemPoolAlloc(myMemPool, &block);
+    printf("Blocks After 2nd Alloc\n");
+    PrintMemBlocks(myMemPool);
+
+    MemPoolAlloc(myMemPool, &block2);
+    printf("Blocks After 2nd Alloc\n");
+    PrintMemBlocks(myMemPool);
+
     TestMetrics *blockOneData = block -> data;
 
     TestMetrics metricOne = { 200, 300, 2.3, 23.4345 };
@@ -57,10 +64,6 @@ int main (int argc, char* argv[])
     printf("\nTest Data [Block1]:\n");
     printf("First Element PourMode: %d\n", blockOneData[0].pourMode);
     printf("Second Element PourMode: %d\n", blockOneData[1].pourMode);
-
-    MemPoolAlloc(myMemPool, &block2);
-    printf("Blocks After 2nd Alloc\n");
-    PrintMemBlocks(myMemPool);
 
     MemPoolFree(myMemPool, block);
     printf("Blocks After 1st Free\n");
